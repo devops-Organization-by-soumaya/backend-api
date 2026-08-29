@@ -1,48 +1,62 @@
 # ✅ Name of the workflow
 name: Pipeline CI/CD Backend-api
 
-# ✅ Trigger this workflow on push to main branch
+# ✅ Trigger workflow when code is pushed to main
 on:
   push:
     branches:
       - main
 
-# ✅ Global Environment Variables
+# ✅ Global environment variables
 env:
   BUILD_NUMBER: ${{ github.run_number }}
   IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/backend-api:${{ github.run_number }}
-  
+  PORT: 3001
+
 jobs:
 
-  # ✅ Build and Push Docker Image
+  # ==========================================================
+  # ✅ BUILD AND PUSH DOCKER IMAGE
+  # ==========================================================
   build-and-push-job:
     runs-on: ubuntu-latest
 
     steps:
+
+      # Clone repository
       - name: Clone Source Code
         uses: actions/checkout@v4
 
-      # ✅ Login to Docker Hub
+      # Login to Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # ✅ Build Docker image
+      # Build Docker image
       - name: Build Docker image
-        run: docker build -t ${{ env.IMAGE_NAME }} .
+        run: |
+          docker build -t ${{ env.IMAGE_NAME }} .
 
-      # ✅ Push Docker image to Docker Hub
+      # Push Docker image
       - name: Push Docker image
-        run: docker push ${{ env.IMAGE_NAME }}
+        run: |
+          docker push ${{ env.IMAGE_NAME }}
 
-  # ✅ Deploy to VPS
+
+  # ==========================================================
+  # ✅ DEPLOY TO VPS
+  # ==========================================================
   deploy-job:
     runs-on: ubuntu-latest
+
+    # Deploy only if build-and-push-job succeeds
     needs: build-and-push-job
 
     steps:
+
+      # Connect to VPS using SSH
       - name: Connect to the VPS using SSH
         uses: appleboy/ssh-action@master
         with:
@@ -52,13 +66,28 @@ jobs:
 
           script: |
 
-            # Pull the latest Docker image
+            # ============================================
+            # Create Docker network if it doesn't exist
+            # ============================================
+            sudo docker network inspect backend-api-net \
+              || sudo docker network create backend-api-net
+
+
+            # ============================================
+            # Pull the new Docker image
+            # ============================================
             sudo docker pull ${{ env.IMAGE_NAME }}
 
-            # Remove the old container if it exists
+
+            # ============================================
+            # Remove old container
+            # ============================================
             sudo docker rm -f backend-api || true
 
+
+            # ============================================
             # Run the new container
+            # ============================================
             sudo docker run -d \
               --name backend-api \
               --network backend-api-net \
