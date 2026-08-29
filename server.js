@@ -47,7 +47,7 @@ app.get("/test", (req, res) => {
   res.send("Hello Team boo, this is a test endpoint. The server is running successfully.gi");
 });
 
-app.get("/auth", (req, res) => {
+app.get("/autho", (req, res) => {
   res.send("This is a auth endpoint. Authentication logic will be implemented here.");
 });
 
