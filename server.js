@@ -40,11 +40,11 @@ app.get("/", (req, res) => {
 });
 
 app.get("/hello", (req, res) => {
-  res.send("Hello Team");
+  res.send("Hello Team boo");
 });
 
 app.get("/test", (req, res) => {
-  res.send("Hello Team");
+  res.send("Hello Team boo, this is a test endpoint. The server is running successfully.gi");
 });
 
 app.get("/auth", (req, res) => {
